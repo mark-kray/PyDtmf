@@ -66,7 +66,6 @@ def main():
         consecutive_code_counter += 1
         if consecutive_code_counter == consecutive_block_requirement:
             print(f"Registered {code}")
-            return
             key = code
             if code in code_to_key:
                 key = code_to_key[code]
@@ -81,11 +80,15 @@ def main():
         freq, amp = freq_amp(indata, sample_rate)
         freq, amp = sort_freq_amp(freq, amp)
 
+        #print([(freq[i], amp[i]) for i in range(50)])
+
         if amp[0] > 1:
             responses = dict()
             response_count = dict()
+            other = 0
+            other_count = 0
             for i in range(len(freq)):
-                if amp[i] < amp[0]/2:
+                if amp[i] < amp[0]/3:
                     break
                 for dtms_freq in dtms_frequencies:
                     if abs(dtms_freq - freq[i]) <= band:
@@ -93,14 +96,25 @@ def main():
                         response_count[dtms_freq] = response_count.get(dtms_freq, 0) + 1
                         break
                 else:
-                    responses[-1] = responses.get(-1, 0) + amp[i]
-            print(sorted([(k, v) for k, v in responses.items()], key=lambda x: x[1]))
-            if len(responses) == 2 and -1 not in responses:
+                    other = other + amp[i]
+                    other_count = other_count + 1
+
+            for freq in responses.keys():
+                responses[freq] /= response_count[freq]
+            if other_count > 0:
+                other /= other_count
+
+            if len(responses) == 2 and other == 0: # and -1 not in responses:
                 detected = sorted(list(responses.keys()))
-                code = codes[detected[0]][detected[1]]
-                # print(code)
-                register_detection(code)
-                return
+                f1 = detected[0]
+                f2 = detected[1]
+                if responses[f1] > other and responses[f2] > other:
+                    if f1 in codes.keys() and f2 in codes[f1].keys():
+                        # print(sorted([(f, responses[f]) for f in responses], reverse=True, key=lambda x: x[1]))
+                        # print(f"other: {other}")
+                        code = codes[detected[0]][detected[1]]
+                        register_detection(code)
+                        return
         register_detection('')
 
     with sd.InputStream(channels=1, callback=callback, samplerate=sample_rate, blocksize=int(sample_rate*block_duration)):
@@ -109,4 +123,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
