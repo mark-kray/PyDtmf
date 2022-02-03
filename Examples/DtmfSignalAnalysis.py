@@ -9,7 +9,7 @@ from Dtmf import freq_amp, sort_freq_amp, detect_dtmf
 
 
 def main():
-    fname = "../PhoneAudio/1.wav"
+    fname = "../Resources/1.wav"
     wav_file = wave.open(fname, 'r')
     n_samples = wav_file.getnframes()
     sample_rate = wav_file.getframerate()
